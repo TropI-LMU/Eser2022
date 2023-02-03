@@ -22,25 +22,25 @@ The scripts work with following 'expectations':
 
 ### 01_DataPreprocessing.R
 
-**./01_DataPreprocessing.R** *basedir* *codedir*
+**./01_DataPreprocessing.R** *basedirZiegler* *codedir*
 
 The output of the script is put into the FilteredData directory.
 
 ### 02_ExpressionAnalysis_TcellGeneExpression.R
 
-**./02_ExpressionAnalysis_TcellGeneExpression.R** *basedir* *codedir*
+**./02_ExpressionAnalysis_TcellGeneExpression.R** *basedirZiegler* *codedir*
 
 The output of the script is put into OutputData/markerGenes/ directory
 
 ### 03_ExpressionAnalysis_IFNPosVSneg.R
 
-**./03_ExpressionAnalysis_IFNPosVSneg.R** *basedir* *codedir*
+**./03_ExpressionAnalysis_IFNPosVSneg.R** *basedirZiegler* *codedir*
 
 The output of the script is put into OutputData/markerGenes/ directory
 
 ### 04_PathwayAndGOAnalysis_IFNPosVSneg.R
 
-**./04_PathwayAndGOAnalysis_IFNPosVSneg.R** *basedir* *codedir*
+**./04_PathwayAndGOAnalysis_IFNPosVSneg.R** *basedirZiegler* *codedir*
 
 The output of the script is put into OutputData/pathwayEnrichment/ directory
 
@@ -63,3 +63,31 @@ The full figure is put into *basedirZiegler* OutputData/ directory. Subfigures a
 **./07_Supplementary_Fig6.R** *basedirZiegler* *basedirZiegler* *codedir*
 
 The full figure is put into *basedirZiegler* OutputData/ directory. Subfigures are in the folders of the respecive dataset.
+
+
+
+## Yoshida dataset 
+
+### 01_DataPreprocessing.R
+
+**./01_DataPreprocessing.R** *basediYoshidar* *codedir*
+
+The output of the script is put into the FilteredData directory.
+
+### 02_ExpressionAnalysis_TcellGeneExpression.R
+
+**./02_ExpressionAnalysis_TcellGeneExpression.R** *basedirYoshida* *codedir*
+
+The output of the script is put into OutputData/markerGenes/ directory
+
+### 03_ExpressionAnalysis_IFNPosVSneg.R
+
+**./03_ExpressionAnalysis_IFNPosVSneg.R** *basedirYoshida* *codedir*
+
+The output of the script is put into OutputData/markerGenes/ directory
+
+### 04_PathwayAndGOAnalysis_IFNPosVSneg.R
+
+**./04_PathwayAndGOAnalysis_IFNPosVSneg.R** *basedirYoshida* *codedir*
+
+The output of the script is put into OutputData/pathwayEnrichment/ directory
