@@ -1,0 +1,13 @@
+Label	Yoshida	Ziegler
+Goblet	Goblet, Goblet inflammatory	AZGP1 SCGB3A1 LTF high Goblet Cells, SCGB1A1 high Goblet Cells, MUC5AC high Goblet Cells, AZGP1 high Goblet Cells 
+Secretory	Secretory	BPIFA1 high Secretory Cells, KRT24 KRT13 high Secretory Cells, SERPINB11 high Secretory Cells, BPIFA1 and Chemokine high Secretory Cells, Early Response Secretory Cells, Interferon Responsive Secretory Cells 
+Basal	Basal, Basal cycling	Basal Cells, Mitotic Basal Cells 
+Ciliated	Ciliated	Developing Ciliated Cells, FOXJ1 high Ciliated Cells, Early Response FOXJ1 high Ciliated Cells, BEST4 high Cilia high Ciliated Cells, Interferon Responsive Ciliated Cells, Cilia high Ciliated Cells 
+Deuterosomal	Deuterosomal	Deuterosomal Cells
+Squamous	Squamous	VEGFA high Squamous Cells, CCL5 high Squamous Cells, SPRR2D high Squamous Cells, HOPX high Squamous Cells 
+T Cells	T CD8 ,T naive, T gd, T reg, T CD8 IFN responsive, NKT, T CD4, T cycling 	CD8 T Cells, Early Response T Cells, Interferon Responsive Cytotoxic CD8 T Cells
+Macrophage	Macrophage	ITGAX high Macrophages, Inflammatory Macrophages, MSR1 C1QB high Macrophages, Interferon Responsive Macrophages, FFAR4 high Macrophages 
+Mast	Mast	Mast Cells
+B Cells	B mem, B naive, B cycling 	B Cells
+pDC	pDC	Plasmacytoid DCs
+DC	cDC	Dendritic Cells

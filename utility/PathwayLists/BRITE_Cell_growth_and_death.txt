@@ -1,0 +1,8 @@
+> Cell growth and death
+hsa04110
+hsa04114
+hsa04210
+hsa04216
+hsa04217
+hsa04115
+hsa04218

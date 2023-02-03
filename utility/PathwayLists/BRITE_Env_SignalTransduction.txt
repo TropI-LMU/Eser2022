@@ -1,0 +1,27 @@
+> Signal transduction
+hsa04010
+hsa04012
+hsa04014
+hsa04015
+hsa04310
+hsa04330
+hsa04340
+hsa04350
+hsa04390
+hsa04392
+hsa04370
+hsa04371
+hsa04630
+hsa04064
+hsa04668
+hsa04066
+hsa04068
+hsa04020
+hsa04070
+hsa04072
+hsa04071
+hsa04024
+hsa04022
+hsa04151
+hsa04152
+hsa04150
