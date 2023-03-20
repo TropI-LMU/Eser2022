@@ -72,7 +72,7 @@ z.tib.deg[impgenes.bz, "colour"] <- "red"
 
 # label
 # colour
-merge(go.z.c, go.y.c, by = "Term") %>% 
+merge(go.z.c, go.y.c, by = "Term", suffixes=c('_Ziegler', '_Yoshida')) %>% 
         vroom_write(paste0(basedir_z,"/OutputData/Both_goEnrichment_Ciliated.csv"), 
         delim = '\t')
 

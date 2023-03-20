@@ -1,13 +1,13 @@
-# args <- commandArgs(trailingOnly = TRUE)
-#
-# predir = ''
-# basedir = args[1]
-# plotdir = basedir
-# codedir = args[2]
-# tissue_type = args[3]
-predir = '/home/obaranov/projects/'
-basedir = 'Tabea_Paper/debug/'
-codedir = 'Tabea_Paper/code/'
+args <- commandArgs(trailingOnly = TRUE)
+
+predir = ''
+basedir = args[1]
+plotdir = basedir
+codedir = args[2]
+tissue_type = args[3]
+# predir = '/home/obaranov/projects/'
+# basedir = 'Tabea_Paper/debug/'
+# codedir = 'Tabea_Paper/code/'
 
 library(tidyverse)
 library(ggplot2)
@@ -40,9 +40,9 @@ labs$Label = sapply(labs$Label, trimws) %>% unname
 
 tissue_type = 'CD4'
 
-gene.tib = vroom(paste0(predir,basedir,'/data/bulkRNA/Enrichment/CD4IFN/PathwayCorrelation_ci_',tissue_type,'.csv')) %>%
+gene.tib = vroom(paste0(predir,basedir,'/result_tables/',tissue_type,'/PathwayCorrelation_ci.csv')) %>%
             column_to_rownames('PathwayID')
-rand.tib = vroom(paste0(predir,basedir,'/data/bulkRNA/Enrichment/CD4IFN/RandomPWCorrelation_ci.csv')) %>%
+rand.tib = vroom(paste0(predir,basedir,'/result_tables/Random/RandomPWCorrelation_ci.csv')) %>%
             column_to_rownames('Pathway')
 
 rand.row = list()
@@ -103,7 +103,7 @@ plot.tib['Pathway'] = factor(rownames(plot.tib), levels=rownames(plot.tib))
 
 tmp.tib = plot.tib  %>% filter((cd4ifng.spearman.rho > 0.25 | cd4ifng.spearman.rho < -0.25) | grepl('random',Pathway))
 
-loadfonts(device = "postscript")
+# loadfonts(device = "postscript")
 
 loadfonts()
 p = ggplot(tmp.tib, aes(y = cd4ifng.spearman.rho, x = Pathway, colour = col)) +
@@ -122,49 +122,71 @@ p = ggplot(tmp.tib, aes(y = cd4ifng.spearman.rho, x = Pathway, colour = col)) +
         panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_line( size=.1, color="grey"))
 
-ggsave(paste0(predir,basedir, 'A_', tissue_type,'_correlation_poster.svg'), plot = p,
+ggsave(paste0(predir,basedir, '/newplots/A_', tissue_type,'_correlation_poster.svg'), plot = p,
         width = 16.5, height = 18, unit = 'cm')
+tmp.tib %>% 
+    dplyr::select(c("Description", "cd4ifng.spearman.rho", "cd4ifng.p.value","cd4ifng.conf.up","cd4ifng.conf.down")) %>%
+    rownames_to_column('TermID') %>%
+    write_delim(paste0(predir, basedir, "/result_tables/export/Fig4PanelB.csv"), delim = "\t")
 
 
 ### panel C: virus correlation
-plot.tib =plot.tib %>% arrange(vir.spearman.rho)
-plot.tib['Pathway'] = factor(rownames(plot.tib), levels=rownames(plot.tib))
-plot.tib['col'] = 'pathway'
-plot.tib['30.random','col'] = 'random'
-plot.tib['300.random','col'] = 'random'
-sigs = plot.tib %>% filter(vir.p.value < 0.05) %>% rownames()
-plot.tib[sigs,'col'] = 'significant'
+plot.tib <- plot.tib %>% arrange(vir.spearman.rho)
+plot.tib["Pathway"] <- factor(rownames(plot.tib), levels = rownames(plot.tib))
+plot.tib["col"] <- "pathway"
+plot.tib["30.random", "col"] <- "random"
+plot.tib["300.random", "col"] <- "random"
+sigs <- plot.tib %>%
+    filter(vir.p.value < 0.05) %>%
+    rownames()
+plot.tib[sigs, "col"] <- "significant"
 
 
-plot.tib['Group'] = factor(plot.tib %>% pull('Group'),
-        levels = c('Migration','Chemokines', 'innate immunity','T cell function','other','ctl'))
+plot.tib["Group"] <- factor(plot.tib %>% pull("Group"),
+    levels = c("Migration", "Chemokines", "innate immunity", "T cell function", "other", "ctl")
+)
 
-tmp.tib = plot.tib  %>% filter((vir.spearman.rho > 0.25 | vir.spearman.rho < -0.25) | grepl('random',Pathway))
+tmp.tib <- plot.tib %>% filter((vir.spearman.rho > 0.25 | vir.spearman.rho < -0.25) | grepl("random", Pathway))
 ggplot(tmp.tib, aes(y = vir.spearman.rho, x = Pathway, colour = col)) +
     geom_point() +
     geom_errorbar(aes(ymax = vir.conf.up, ymin = vir.conf.down)) +
-    geom_hline(yintercept=0, color = 'black') +
+    geom_hline(yintercept = 0, color = "black") +
     theme_minimal(base_size = 15) +
     geom_point(aes(y = rep(-1.05, dim(tmp.tib)[1]), colour = Group),
-                    shape=15, size=3) +
+        shape = 15, size = 3
+    ) +
     scale_colour_manual(values = group.pal) +
-    scale_x_discrete(labels=tmp.tib$Label) + ylim(c(-1.05,1)) +
-    ylab('') + xlab('') +ylim(c(-1.05,1)) + scale_y_continuous(position = "right") +
-    theme(text=element_text(family="Arial"),axis.text.x = element_text(angle = 90,hjust=1,vjust=0.2),
-        legend.position="none",
+    scale_x_discrete(labels = tmp.tib$Label) +
+    ylim(c(-1.05, 1)) +
+    ylab("") +
+    xlab("") +
+    ylim(c(-1.05, 1)) +
+    scale_y_continuous(position = "right") +
+    theme(
+        text = element_text(family = "Arial"), axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.2),
+        legend.position = "none",
         axis.ticks.y = element_blank(),
         panel.grid.major.x = element_blank(),
-        panel.grid.major.y = element_line( size=.1, color="grey"))
+        panel.grid.major.y = element_line(size = .1, color = "grey")
+    )
 
-ggsave(paste0(predir, basedir, 'C_virusload_correlation_poster.svg'),
-        width = 11.5, height = 18, unit = 'cm')
+ggsave(paste0(predir, basedir, "/newplots/C_virusload_correlation_poster.svg"),
+    width = 11.5, height = 18, unit = "cm"
+)
+
+tmp.tib %>%
+    dplyr::select(c("Description","vir.spearman.rho", "vir.p.value", "vir.conf.up", "vir.conf.down")) %>%
+    rownames_to_column('TermID') %>%
+    write_delim(paste0(predir, basedir, "/result_tables/export/Fig4PanelD.csv"), delim = "\t")
+
+
 
 ### panel B: cd8 correlation
 tissue_type = 'CD8'
 
-gene.tib = vroom(paste0(predir,basedir,'/data/bulkRNA/Enrichment/CD8IFN/PathwayCorrelation_ci_',tissue_type,'.csv')) %>%
+gene.tib = vroom(paste0(predir,basedir,'/result_tables/',tissue_type,'/PathwayCorrelation_ci.csv')) %>%
             column_to_rownames('PathwayID')
-rand.tib = vroom(paste0(predir,basedir,'/data/bulkRNA/Enrichment/CD8IFN/RandomPWCorrelation_ci.csv')) %>%
+rand.tib = vroom(paste0(predir,basedir,'/result_tables/Random/RandomPWCorrelation_ci.csv')) %>%
             column_to_rownames('Pathway')
 
 rand.row = list()
@@ -192,7 +214,7 @@ plot.tib['Pathway'] = factor(rownames(plot.tib),levels=rownames(plot.tib))
 plot.tib['col'] = 'pathway'
 plot.tib['30.random','col'] = 'random'
 plot.tib['300.random','col'] = 'random'
-sigs = plot.tib %>% filter(cd4ifng.p.value < 0.05) %>% rownames()
+sigs = plot.tib %>% filter(cd8ifng.p.value < 0.05) %>% rownames()
 plot.tib[sigs,'col'] = 'significant'
 
 plot.tib = plot.tib %>% rownames_to_column('PathwayID') %>%
@@ -207,18 +229,18 @@ plot.tib['30.random', 'Group'] = "ctl"
 plot.tib['300.random', 'Group'] = "ctl"
 
 plot.tib = plot.tib[! rownames(plot.tib) %in% c('hsa04392','hsa04672'),]
-plot.tib = plot.tib %>% arrange(by = cd4ifng.spearman.rho)
+plot.tib = plot.tib %>% arrange(by = cd8ifng.spearman.rho)
 plot.tib['Pathway'] = factor(rownames(plot.tib), levels=rownames(plot.tib))
 plot.tib = plot.tib %>% drop_na(Label)
 
-plot.tib =plot.tib %>% arrange(cd4ifng.spearman.rho)
+plot.tib =plot.tib %>% arrange(cd8ifng.spearman.rho)
 plot.tib['Pathway'] = factor(rownames(plot.tib), levels=rownames(plot.tib))
 
 
-tmp.tib = plot.tib  %>% filter((cd4ifng.spearman.rho > 0.25 | cd4ifng.spearman.rho < -0.25) | grepl('random',Pathway))
-ggplot(tmp.tib, aes(y = cd4ifng.spearman.rho, x = Pathway, colour = col)) +
+tmp.tib = plot.tib  %>% filter((cd8ifng.spearman.rho > 0.25 | cd8ifng.spearman.rho < -0.25) | grepl('random',Pathway))
+ggplot(tmp.tib, aes(y = cd8ifng.spearman.rho, x = Pathway, colour = col)) +
     geom_point() +
-    geom_errorbar(aes(ymax = cd4ifng.conf.up, ymin = cd4ifng.conf.down)) +
+    geom_errorbar(aes(ymax = cd8ifng.conf.up, ymin = cd8ifng.conf.down)) +
     geom_hline(yintercept=0, color = 'black') +
     theme_minimal(base_size = 15) +
     geom_point(aes(y = rep(-1.05, dim(tmp.tib)[1]), colour = Group),
@@ -232,15 +254,21 @@ ggplot(tmp.tib, aes(y = cd4ifng.spearman.rho, x = Pathway, colour = col)) +
         panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_line( size=.1, color="grey"))
 
-ggsave(paste0(predir, basedir, '/B_', tissue_type,'_correlation_poster.svg'),
+ggsave(paste0(predir, basedir, '/newplots/B_', tissue_type,'_correlation_poster.svg'),
         width = 11.5, height = 18, unit = 'cm')
+
+tmp.tib %>%
+    dplyr::select(c("Description", "cd8ifng.spearman.rho", "cd8ifng.p.value", "cd8ifng.conf.up", "cd8ifng.conf.down")) %>%
+    rownames_to_column('TermID') %>%
+    write_delim(paste0(predir, basedir, "/result_tables/export/Fig4PanelC.csv"), delim = "\t")
+
 
 ### panel D: Gene correlations
 
 # last minutes changes, as usual
 rearrange = function(gene, tib, tissue){
-    outtib = tibble(cd4any = c(tib[gene,'cd4any.spearman_rho'], tib[gene, 'cd4any.p_value'],
-    tib[gene, 'cd4any.lower'], tib[gene, 'cd4any.upper']),
+    outtib = tibble(cd8ifn = c(tib[gene,'cd8ifng.spearman_rho'], tib[gene, 'cd8ifng.p_value'],
+    tib[gene, 'cd8ifng.lower'], tib[gene, 'cd8ifng.upper']),
     cd4ifn = c(tib[gene,'cd4ifng.spearman_rho'], tib[gene, 'cd4ifng.p_value'],
     tib[gene, 'cd4ifng.lower'], tib[gene, 'cd4ifng.upper']),
     vir = c(tib[gene,'vir.spearman_rho'], tib[gene, 'vir.p_value'],
@@ -250,23 +278,25 @@ rearrange = function(gene, tib, tissue){
     return(outtib %>% t() %>% as.data.frame)
 }
 
+
 plotforgene = function(gene){
     gene.subtib = NULL
     for (tissue in c('NK','CD4','CD8','Monocytes')){
-        gene.tib = vroom(paste0(predir,basedir,'/data/bulkRNA/Correlation/',tissue,'/GeneCorrelation_ci.csv')) %>%
+        gene.tib = vroom(
+            paste0(predir,basedir,'/result_tables/',tissue,'/GeneCorrelation_ci.csv')) %>%
         column_to_rownames('gene')
         tmp.tib = rearrange(gene, gene.tib, tissue) %>%
         rownames_to_column('correlate') %>%
         mutate(tissue = tissue)
         gene.subtib = gene.subtib %>% bind_rows(tmp.tib)
     }
+
     symbol = gene.tib[gene,'symbol']
     gene.subtib$tissue = factor(gene.subtib$tissue, levels = c('Monocytes','NK','CD4','CD8'))
-    gene.subtib$correlate = factor(gene.subtib$correlate, levels = c('vir','cd4any','cd4ifn'))
+    gene.subtib$correlate = factor(gene.subtib$correlate, levels = c('vir','cd8ifn','cd4ifn'))
     gene.subtib$sig = factor(gene.subtib$sig, levels = c(1,0))
     # gene.subtib$size = ifelse(gene.subtib$pvalue > 0.05, 'nonsig','sig')
     Cell_type = c(Monocytes = '#8dd3c7',NK ='#0f804d',CD4 = '#55a0fb',CD8='#5757f9')
-
     p = ggplot(gene.subtib %>% arrange(by = desc(tissue),correlate ) %>% mutate(dummy = 1:dim(gene.subtib)[1]) ,
             aes(y = rho, x = dummy, colour = tissue, linetype = sig)) +
             geom_point(aes(shape = correlate), size = 3) +
@@ -279,6 +309,8 @@ plotforgene = function(gene){
             scale_colour_manual(values = Cell_type) +
             ylab('Spearman correlation') + xlab('') +
             ggtitle(symbol)
+    gene.subtib %>% arrange(by = desc(tissue),correlate ) %>%
+        write_delim(paste0(predir, basedir, "/result_tables/export/PanelA_", symbol ,".csv"), delim = "\t")
     return(p)
 }
 
@@ -290,28 +322,19 @@ uberp = (plotforgene(genes[1]) + theme(text=element_text(family="Arial"),legend.
 (plotforgene(genes[2]) + theme(text=element_text(family="Arial"),legend.position = "none")) +
 plotforgene(genes[3])
 
-ggsave(paste0(predir, basedir,'/Z_Gene_correlation.svg'), plot = uberp, width = 30, height = 8, unit = 'cm')
-
+ggsave(paste0(predir, basedir,'/newplots/Z_Gene_correlation.svg'), plot = uberp, width = 30, height = 8, unit = 'cm')
 
 ###############
 ### heatmap ###
 ###############
 
 
-# source(paste0(predir,basedir,'FunctionArchive/Get_Annotation.R'))
-# source(paste0(predir,basedir,'FunctionArchive/Annotate_Pathways.R'))
-# source(paste0(predir,basedir,'FunctionArchive/Calculate_set_mean.R'))
-# source(paste0(predir,basedir,'FunctionArchive/Convert_Rownames.R'))
-# source(paste0(predir,basedir,'FunctionArchive/Save_Pheatmap.R'))
-# source(paste0(predir,basedir,'FunctionArchive/Color_helper.R'))
-
-
 #gather significant tissue - pathway combinations
 tis.pw.keep = tibble()
 for(tissue_type in c('Monocytes','NK','CD4','CD8')){
-    pw.up = vroom(paste0(predir, basedir,'/data/bulkRNA/Enrichment/CD4IFN/PathwayEnrichment_Up_',tissue_type,'.csv')) %>%
+    pw.up = vroom(paste0(predir, basedir,'/result_tables/',tissue_type,'/PathwayEnrichment_Up.csv')) %>%
             arrange(by= PathwayID)
-    pw.down = vroom(paste0(predir, basedir,'/data/bulkRNA/Enrichment/CD4IFN/PathwayEnrichment_Down_',tissue_type,'.csv'))%>%
+    pw.down = vroom(paste0(predir, basedir,'/result_tables/',tissue_type,'/PathwayEnrichment_Down.csv'))%>%
             arrange(by= PathwayID)
 
     subtib = bind_rows(pw.up %>% filter(p.val < 0.05) %>% mutate(direction = 'up'),
@@ -341,9 +364,9 @@ metadata_mc['Sample_ID'] = metadata_mc %>% pull('Sample_ID') %>% sapply(function
 
 
 #read gene sets
-list.immu = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_Immune.gmt'))
-list.sigtrans = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_SignalingMolecules.gmt'))
-list.sigmol = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_SignalTransduction.gmt'))
+list.immu = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_Immune.gmt'))
+list.sigtrans = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_SignalingMolecules.gmt'))
+list.sigmol = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_SignalTransduction.gmt'))
 kegg.set = list.immu %>% append(list.sigtrans) %>% append(list.sigmol)
 pw.clas = read_excel(paste0(predir,codedir,'/utility/PW_characterisation.xlsx')) %>%
             dplyr::select(-'link') %>%
@@ -442,8 +465,12 @@ ann_colors = list(CD4pos = c('0'='white', '1'='darkorchid4'),
                 )
 ann_colors[['Group']]['other'] = "#AAAAAA"
 
+tmp.tib %>% drop_na() %>%
+    rownames_to_column("PathwayID_celltype") %>%
+    dplyr::select( - PathwayID) %>% 
+    write_delim(paste0(predir, basedir, "/result_tables/export/Fig4PanelE_heatmap.csv"), delim = "\t")
 
-tmp.tib  = tmp.tib %>% dplyr::select(-PathwayName) %>% drop_na()
+tmp.tib  = tmp.tib %>% dplyr::select(- PathwayName) %>% drop_na()
 
 # ugly hack to rotate labels
 draw_colnames_90 <- function (coln, gaps, ...) {
@@ -476,4 +503,4 @@ horiz = pheatmap(tmp.tib[roworder,] %>% dplyr::select(-PathwayID) %>% t,
                 cellheight=10, cellwidth = 12)
 
 
-save_pheatmap_pdf(horiz,paste0(predir, basedir,'/D_HeatMap.pdf'), width = 15, height = 5)
+save_pheatmap_pdf(horiz,paste0(predir, basedir,'/newplots/D_HeatMap.pdf'), width = 15, height = 5)

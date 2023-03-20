@@ -1,6 +1,13 @@
-basedir = '/run/user/1000/gvfs/smb-share:server=intmedicine2.local,share=home/Drive/Tabea_Paper/debug/'
-codedir = '/run/user/1000/gvfs/smb-share:server=intmedicine2.local,share=home/Drive/Tabea_Paper/code/'
-tissue_type = "NK"
+args <- commandArgs(trailingOnly = TRUE)
+
+predir <- ""
+basedir <- args[1]
+codedir <- args[2]
+tissue_type <- args[3]
+# predir = '/home/obaranov/projects/'
+# basedir = '/Tabea_Paper/debug/'
+# codedir = '/Tabea_Paper/code/'
+# tissue_type = "CD8"
 
 library(tidyverse)
 library(ggplot2)
@@ -8,13 +15,10 @@ library(vroom)
 library(gage)
 library(pheatmap)
 library(matrixStats)
+library(KEGGREST)
 
 
 setwd(basedir)
-# source(paste0(basedir,'FunctionArchive/Convert_Rownames.R'))
-# source(paste0(basedir,'FunctionArchive/Calculate_correlations.R'))
-# source(paste0(basedir,'FunctionArchive/Calculate_set_mean.R'))
-# setwd(paste0(basedir,'/scRNA_covid/'))
 source(paste0(codedir,'/utility/Plot_Utility.R'))
 source(paste0(codedir,'/utility/General_Utility.R'))
 
@@ -29,21 +33,40 @@ counts <- read.csv(paste0("data/bulkRNA/rawData/",tissue_type,"_counts.csv"), se
                 column_to_rownames('Gene')
 
 # select the sample & control
+
 case = metadata_ct %>% filter(TAG == 'Tag4')
+week1 = cellfreq %>% right_join(case, by = 'Sample_ID') %>%
+                filter(weeks_after_onset_of_symptoms == 1) %>%
+                pull('Sample_ID') %>% unique
+
 ctl = metadata_ct %>% filter(TAG == 'Ctrl')
+d4idx = 1:length(week1)
+ctlidx = (length(week1) + 1):(length(week1) + dim(ctl)[1])
+counts = as.matrix(counts[,c(week1,ctl %>% pull('Sample_ID'))])
 
-caseidx = 1:length(case)
-ctlidx = (length(case) + 1):(length(case) + dim(ctl)[1])
-counts = as.matrix(counts[,c(case %>% pull('Sample_ID'), ctl %>% pull('Sample_ID'))])
 
-# id conversion to entrez id
 counts = EnsToEnt(counts)
 
+# case = metadata_ct %>% filter(TAG == 'Tag4')
 
-list.immu = readList(paste0(codedir,'/utility/PathwayListst/GeneSet_Immune.gmt'))
-list.sigtrans = readList(paste0(codedir,'/utility/PathwayListst/GeneSet_SignalingMolecules.gmt'))
-list.sigmol = readList(paste0(codedir,'/utility/PathwayListst/GeneSet_SignalTransduction.gmt'))
-list.death = readList(paste0(codedir,'/utility/PathwayListst/GeneSet_Cell_growth_and_death.gmt'))
+
+# ctl = metadata_ct %>% filter(TAG == 'Ctrl')
+
+
+
+# caseidx = 1:length(case)
+# ctlidx = (length(case) + 1):(length(case) + dim(ctl)[1])
+# counts = as.matrix(counts[,c(case %>% pull('Sample_ID'), ctl %>% pull('Sample_ID'))])
+
+# id conversion to entrez id
+# counts = EnsToEnt(counts)
+
+
+
+list.immu = readList(paste0(codedir,'/utility/PathwayLists/GeneSet_Immune.gmt'))
+list.sigtrans = readList(paste0(codedir,'/utility/PathwayLists/GeneSet_SignalingMolecules.gmt'))
+list.sigmol = readList(paste0(codedir,'/utility/PathwayLists/GeneSet_SignalTransduction.gmt'))
+list.death = readList(paste0(codedir,'/utility/PathwayLists/GeneSet_Cell_growth_and_death.gmt'))
 
 kegg.set = list.immu %>% append(list.sigtrans) %>% append(list.sigmol) %>% append(list.death)
 

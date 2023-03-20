@@ -1,6 +1,5 @@
 library(ggplot2)
 library(tidyverse)
-library(ggalt)
 library(RColorBrewer)
 library(pheatmap)
 library(hablar)

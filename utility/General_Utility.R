@@ -75,7 +75,7 @@ calc.pwmeans = function(counts, gene.list){
     for(name in names(gene.list)){
             pw.mean = list(counts[gene.list[[name]],] %>%
                     drop_na() %>%
-                    dplyr::select(where(is_numeric)) %>%
+                    dplyr::select(where(is.numeric)) %>%
                     colMeans)
             names(pw.mean) = name
             mean.list = mean.list %>% append(pw.mean)

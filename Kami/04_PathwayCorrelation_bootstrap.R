@@ -4,10 +4,10 @@ predir = ''
 basedir = args[1]
 codedir = args[2]
 tissue_type = args[3]
-# predir = '/media/olga/40A732655125C6DB/Arbeit/'
+# predir = '/home/obaranov/projects/'
 # basedir = '/Tabea_Paper/debug/'
 # codedir = '/Tabea_Paper/code/'
-# tissue_type = "NK"
+# tissue_type = "CD8"
 
 library(tidyverse)
 library(gage)
@@ -16,21 +16,17 @@ library(vroom)
 # this script needs to run from console, as it kills atom
 
 
-# source(paste0(basedir,'FunctionArchive/Convert_Rownames.R'))
-# source(paste0(basedir,'FunctionArchive/Calculate_correlations.R'))
-# source(paste0(basedir,'FunctionArchive/Calculate_set_mean.R'))
-# source(paste0(basedir,'FunctionArchive/Annotate_Pathways.R'))
-
 setwd(paste0(predir, basedir))
 source(paste0(predir, codedir,'/utility/General_Utility.R'))
 
 
 # read precalculated data #
 ###########################
-virload = read.csv("data/bulkRNA/rawData/Virusload.csv",
+virload = read.csv("data/bulkRNA/rawData/Figure4_viruslast.csv",
             header = TRUE, stringsAsFactors = FALSE, sep = '\t') %>% drop_na
 cellfreq <- read.csv("data/bulkRNA/rawData/CellFractions.csv",
-                            header = TRUE, stringsAsFactors = FALSE,  sep = '\t', check.names = FALSE)
+                            header = TRUE, stringsAsFactors = FALSE,  sep = '\t', check.names = FALSE) %>% 
+                            rename(subject_ID = 'Patient_ID') 
 c_counts <- read.csv(paste0("data/bulkRNA/rawData/",tissue_type,"_counts.csv"), sep = '\t', check.names=FALSE) %>%
                 column_to_rownames('Gene')
 # filter metadata
@@ -38,10 +34,10 @@ metadata <- read.csv("data/bulkRNA/rawData//Metadata.csv", header = TRUE, string
 metadata <- metadata[metadata$Tissue  == tissue_type,]
 metadata['Sample_ID'] = metadata %>% pull('Sample_ID') %>% sapply(function(x){as.character(x)})
 # get gene sets
-list.immu = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_Immune.gmt'))
-list.sigtrans = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_SignalingMolecules.gmt'))
-list.sigmol = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_SignalTransduction.gmt'))
-list.death = readList(paste0(predir,codedir,'/utility/PathwayListst/GeneSet_Cell_growth_and_death.gmt'))
+list.immu = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_Immune.gmt'))
+list.sigtrans = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_SignalingMolecules.gmt'))
+list.sigmol = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_SignalTransduction.gmt'))
+list.death = readList(paste0(predir,codedir,'/utility/PathwayLists/GeneSet_Cell_growth_and_death.gmt'))
 kegg.set = list.immu %>% append(list.sigtrans) %>% append(list.sigmol) %>% append(list.death)
 
 # data preprocessing
@@ -49,20 +45,38 @@ counts_sub = EnsToEnt(c_counts)
 
 
 cd4.ifn = cellfreq %>% filter(stimulant == "nucleocapsid") %>%
+    filter(weeks_after_onset_of_symptoms == 1) %>%
     filter(Sample_ID %in% colnames(counts_sub)) %>%
-    `[`(c('Sample_ID','CD4IFNg | Freq. of Parent')) %>%
+    `[`(c('Sample_ID','Patient_ID','CD4IFNg | Freq. of Parent')) %>%
     column_to_rownames('Sample_ID')
 
 cd4.any = cellfreq %>% filter(stimulant == "nucleocapsid") %>%
+    filter(weeks_after_onset_of_symptoms == 1) %>%
     filter(Sample_ID %in% colnames(counts_sub)) %>%
     `[`(c('Sample_ID','CD4any | Freq. of Parent')) %>%
     column_to_rownames('Sample_ID')
 
 
+cd8.ifn = cellfreq %>% filter(stimulant == "nucleocapsid") %>%
+    filter(weeks_after_onset_of_symptoms == 1) %>%
+    filter(Sample_ID %in% colnames(counts_sub)) %>%
+    `[`(c('Sample_ID','CD8IFNg | Freq. of Parent')) %>%
+    column_to_rownames('Sample_ID')
 
-virload = cd4.ifn %>% rownames_to_column('Sample_ID') %>% inner_join(virload, by = 'Sample_ID')
-virload['log.VirusLoad'] = log(virload %>% pull('VirusLoad'))
-vir.vector = virload[c('log.VirusLoad','Sample_ID')] %>% column_to_rownames('Sample_ID')
+cd8.any = cellfreq %>% filter(stimulant == "nucleocapsid") %>%
+    filter(weeks_after_onset_of_symptoms == 1) %>%
+    filter(Sample_ID %in% colnames(counts_sub)) %>%
+    `[`(c('Sample_ID','CD8any | Freq. of Parent')) %>%
+    column_to_rownames('Sample_ID')
+
+counts_sub = counts_sub[rownames(cd4.ifn)]
+
+virload <- cd4.ifn %>%
+    rownames_to_column("Sample_ID") %>%
+    inner_join(virload, by = "Patient_ID")
+vir.vector <- virload[c("log.VirusLoad", "Sample_ID")] %>% column_to_rownames("Sample_ID")
+cd4.ifn <- cd4.ifn %>% dplyr::select(-Patient_ID)
+
 
 n.biggest = kegg.set %>% sapply(length) %>% max
 n.smallest = kegg.set %>% sapply(length) %>% min
@@ -78,6 +92,8 @@ cor.tib = tibble(a = c('smallest.cd4ifng','smallest.cd4any', 'smallest.vir',
 
 cd4.tib = tibble(PathwayID = names(kegg.set))
 cd4i.tib = tibble(PathwayID = names(kegg.set))
+cd8.tib = tibble(PathwayID = names(kegg.set))
+cd8i.tib = tibble(PathwayID = names(kegg.set))
 vir.tib = tibble(PathwayID = names(kegg.set))
 iter =1
 for(iter in 1:1000){
@@ -91,6 +107,16 @@ for(iter in 1:1000){
     cd4.any.sub = cd4.any[newcols,,drop = FALSE]
     correlation = calc.spearman.pw(mean.df, cd4.any.sub)
     cd4.tib[paste0('boot',iter)]  = correlation$rhos
+
+
+    cd8.ifn.sub = cd8.ifn[newcols,,drop = FALSE]
+    correlation = calc.spearman.pw(mean.df, cd8.ifn.sub)
+    cd8i.tib[paste0('boot',iter)]  = correlation$rhos
+
+    cd8.any.sub = cd8.any[newcols,,drop = FALSE]
+    correlation = calc.spearman.pw(mean.df, cd8.any.sub)
+    cd8.tib[paste0('boot',iter)]  = correlation$rhos
+
 
     newcols = sample(rownames(vir.vector), size = dim(vir.vector)[1], replace = TRUE )
     mean.df = calc.pwmeans(counts_sub[newcols], kegg.set)
@@ -120,8 +146,17 @@ write.table(cd4.tib, paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstra
             row.names = FALSE, sep = '\t')
 write.table(cd4i.tib, paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_cd4ifng.csv"),
             row.names = FALSE, sep = '\t')
+write.table(cd8.tib, paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_cd8any.csv"),
+            row.names = FALSE, sep = '\t')
+write.table(cd8i.tib, paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_cd8ifng.csv"),
+            row.names = FALSE, sep = '\t')
 write.table(vir.tib, paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_vir.csv"),
             row.names = FALSE, sep = '\t')
+
+# vir.tib=vroom(paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_vir.csv"))
+# cd4i.tib=vroom(paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_cd4ifng.csv"))
+# cd4.tib=vroom(paste0("result_tables/",tissue_type,"/bootstrap_pw/bootstrapped_cd4any.csv"))
+
 
 
 cor.int = get.interval(cor.tib, remove.na = TRUE)
@@ -133,29 +168,35 @@ cor.int %>% dplyr::select('spearman.rho', everything()) %>% mutate(across(where(
         write.table(paste0("result_tables/Random/RandomPWCorrelation_ci.csv"), row.names = FALSE, sep = '\t')
 
 # get confidence interval
-cd4.int = get.interval(cd4.tib)
+cd4.int = get.interval(cd4.tib %>% column_to_rownames('PathwayID'))
 colnames(cd4.int) = c('cd4any.conf.up','cd4any.conf.down')
 
-cd4i.int = get.interval(cd4i.tib)
+cd4i.int = get.interval(cd4i.tib %>% column_to_rownames("PathwayID"))
 colnames(cd4i.int) = c('cd4ifng.conf.up','cd4ifng.conf.down')
 
-vir.int = get.interval(vir.tib)
+cd8.int = get.interval(cd8.tib %>% column_to_rownames('PathwayID'))
+colnames(cd8.int) = c('cd8any.conf.up','cd8any.conf.down')
+
+cd8i.int = get.interval(cd8i.tib %>% column_to_rownames("PathwayID"))
+colnames(cd8i.int) = c('cd8ifng.conf.up','cd8ifng.conf.down')
+
+vir.int = get.interval(vir.tib %>% column_to_rownames("PathwayID"))
 colnames(vir.int) = c('vir.conf.up','vir.conf.down')
 
 
 pw.tib = vroom( paste0("result_tables/",tissue_type,'/PathwayCorrelation.csv'))
 pw.tib = pw.tib %>%
     right_join(cd4i.int %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
-    right_join(cd4.int %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
-    right_join(vir.int %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
+    right_join(cd4.int  %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
+    right_join(cd8i.int %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
+    right_join(cd8.int  %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
+    right_join(vir.int  %>% rownames_to_column('PathwayID'), by = 'PathwayID') %>%
     dplyr::select('PathwayID', 'Description',
-    starts_with('cd4ifng'), starts_with('cd4any'),starts_with('vir'))
+    starts_with('cd4ifng'), starts_with('cd4any'), starts_with('cd8ifng'), starts_with('cd8any'),starts_with('vir'))
 
 pw.tib %>% mutate(across(where(is.numeric), round, 4)) %>%
           write.table( paste0("result_tables/",tissue_type,"/PathwayCorrelation_ci.csv"),
                         row.names = FALSE, sep = '\t')
-
-
 
 
 
